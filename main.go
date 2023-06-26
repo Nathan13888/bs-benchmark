@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"os/exec"
+
+	"github.com/Nathan13888/bs-benchmark/v2/config"
 )
 
 // TODO: implement CLI
@@ -16,27 +18,49 @@ func main() {
 }
 
 func runBenchmarks() {
+	bg := BenchmarkGroup{
+		Name:     "default_group_name",
+		Rounds:   config.ROUNDS,
+		Sizes:    config.SIZES,
+		Seed:     config.SEED,
+		Timeout:  config.TIMEOUT,
+		Gametype: config.GAMETYPE,
+		Map:      config.MAP,
+		Snakes: &[]Snake{ // TODO: load from config
+			{"rng0", "http://127.0.0.1:8000"},
+			{"rng1", "http://127.0.0.1:8001"},
+			{"rng2", "http://127.0.0.1:8002"},
+			{"rng3", "http://127.0.0.1:8003"},
+		},
+	}
+
 	// resolve BATTLESNAKE_BIN
-	path, err := exec.LookPath(BATTLESNAKE_BIN)
+	path, err := exec.LookPath(config.BATTLESNAKE_BIN)
 	if errors.Is(err, exec.ErrDot) {
 		err = nil
 	} else if err != nil {
 		log.Fatal(err)
 	} else {
-		BATTLESNAKE_BIN = path
-		log.Printf("found BATTLESNAKE_BIN at %s", path)
+		config.BATTLESNAKE_BIN = path
+		// log.Printf("found BATTLESNAKE_BIN at %s", path)
 	}
 
-	for _, size := range SIZES {
+	results := make([]BenchmarkResult, len(bg.Sizes)*bg.Rounds)
+	bg.Benchmarks = &results
+
+	for i, size := range bg.Sizes {
 		width := size
 		height := size
 
-		for round := 0; round < ROUNDS; round++ {
+		for round := 0; round < bg.Rounds; round++ {
 			// create benchmark
-			bench := CreateBenchmark(&SNAKES, round, width, height)
+			bench := bg.CreateBenchmark(round, width, height)
 
 			// run benchmark
-			bench.Run()
+			res := bench.Run()
+			results[i*len(bg.Sizes)+round] = res
 		}
 	}
+
+	// bg.PrintJSON()
 }

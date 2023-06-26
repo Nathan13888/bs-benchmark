@@ -1,23 +1,40 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
+
+	"github.com/Nathan13888/bs-benchmark/v2/config"
 )
 
 type Benchmark struct {
-	Args    []string
-	Command string `json:"command"`
-	LogFile string `json:"log_file"`
-	Width   int    `json:"width"`
-	Height  int    `json:"height"`
-	Snakes  *[]Snake
+	// TODO: UUID
+	Args    []string        `json:"args"`
+	Command string          `json:"command"`
+	LogFile string          `json:"log_file"`
+	Width   int             `json:"width"`
+	Height  int             `json:"height"`
+	Snakes  *[]Snake        `json:"-"`
+	Group   *BenchmarkGroup `json:"-"`
+}
+
+type BenchmarkGroup struct {
+	Name       string             `json:"name"`
+	Rounds     int                `json:"rounds"`
+	Sizes      []int              `json:"sizes"`
+	Seed       string             `json:"seed"`
+	Timeout    string             `json:"timeout"`
+	Gametype   string             `json:"gametype"`
+	Map        string             `json:"map"`
+	Snakes     *[]Snake           `json:"snakes"`
+	Benchmarks *[]BenchmarkResult `json:"benchmarks"`
 }
 
 type BenchmarkResult struct {
-	Bench *Benchmark
+	Bench *Benchmark `json:"benchmark"`
 	// TODO: who wins? parse log file
 }
 
@@ -26,12 +43,12 @@ type Snake struct {
 	Addr string `json:"addr"`
 }
 
-func CreateBenchmark(snakes *[]Snake, round int, width int, height int) Benchmark {
+func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benchmark {
 	var (
-		gametype = GAMETYPE
-		mapp     = MAP
-		timeout  = TIMEOUT
-		seed     = SEED
+		gametype = bg.Gametype
+		mapp     = bg.Map
+		timeout  = bg.Timeout
+		seed     = bg.Seed
 	)
 
 	size := fmt.Sprintf("%dx%d", width, height)
@@ -48,31 +65,31 @@ func CreateBenchmark(snakes *[]Snake, round int, width int, height int) Benchmar
 		"--output", logFile,
 	}
 
-	if USE_BROWSER {
+	if config.USE_BROWSER {
 		frmt = append(frmt, "--browser")
 	}
 
-	for _, snake := range *snakes {
+	for _, snake := range *bg.Snakes {
 		frmt = append(frmt, "--name", snake.Name, "--url", snake.Addr)
 	}
 
 	res := Benchmark{
 		Args:    frmt,
-		Command: fmt.Sprintf("%s %s", BATTLESNAKE_BIN, strings.Join(frmt, " ")),
+		Command: fmt.Sprintf("%s %s", config.BATTLESNAKE_BIN, strings.Join(frmt, " ")),
 		LogFile: logFile,
 		Width:   width,
 		Height:  height,
-		Snakes:  snakes,
+		Snakes:  bg.Snakes,
 	}
 	return res
 }
 
-func (benchmark Benchmark) Run() BenchmarkResult {
+func (benchmark *Benchmark) Run() BenchmarkResult {
 	args := benchmark.Args
 
 	log.Println("Running BATTLESNAKE_BIN with args:", args)
 
-	cmd := exec.Command(BATTLESNAKE_BIN, args...)
+	cmd := exec.Command(config.BATTLESNAKE_BIN, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -90,6 +107,15 @@ func (benchmark Benchmark) Run() BenchmarkResult {
 	// TODO: process output results
 
 	return BenchmarkResult{
-		Bench: &benchmark,
+		Bench: benchmark,
 	}
+}
+
+// Print all contents of BenchmarkGroup by encoding JSON
+func (bg *BenchmarkGroup) PrintJSON() {
+	encoded, err := json.MarshalIndent(bg, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(encoded))
 }
