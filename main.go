@@ -12,6 +12,10 @@ func main() {
 
 	// TODO: load snakes from config/flags
 
+	runBenchmarks()
+}
+
+func runBenchmarks() {
 	// resolve BATTLESNAKE_BIN
 	path, err := exec.LookPath(BATTLESNAKE_BIN)
 	if errors.Is(err, exec.ErrDot) {
@@ -23,10 +27,16 @@ func main() {
 		log.Printf("found BATTLESNAKE_BIN at %s", path)
 	}
 
-	// create benchmark
-	bench := CreateBenchmark(&SNAKES, 0, SIZES[0], SIZES[0])
+	for _, size := range SIZES {
+		width := size
+		height := size
 
-	// run benchmark
-	bench.Run()
+		for round := 0; round < ROUNDS; round++ {
+			// create benchmark
+			bench := CreateBenchmark(&SNAKES, round, width, height)
 
+			// run benchmark
+			bench.Run()
+		}
+	}
 }
