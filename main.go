@@ -14,7 +14,11 @@ import (
 func main() {
 	// TODO: ping snakes
 
-	// TODO: load snakes from config/flags
+	// load configs
+	err := config.LoadSettings()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// prepare ./outputs directory
 	if _, err := os.Stat("./outputs"); os.IsNotExist(err) {
@@ -29,8 +33,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	config.OUTPUTS_DIR = path
+	config.Settings.OutputsDir = path
 	// fmt.Println("OUTPUTS_DIR:", config.OUTPUTS_DIR)
+
+	// prepare ./results directory
+	res_path, err := filepath.Abs("./results")
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.Settings.ResultsDir = res_path
 
 	runBenchmarks()
 }
@@ -38,12 +49,12 @@ func main() {
 func runBenchmarks() {
 	bg := BenchmarkGroup{
 		Name:     "default_group_name",
-		Rounds:   config.ROUNDS,
-		Sizes:    config.SIZES,
-		Seed:     config.SEED,
-		Timeout:  config.TIMEOUT,
-		Gametype: config.GAMETYPE,
-		Map:      config.MAP,
+		Rounds:   config.Settings.Rounds,
+		Sizes:    config.Settings.Sizes,
+		Seed:     config.Settings.Seed,
+		Timeout:  config.Settings.Timeout,
+		Gametype: config.Settings.Gametype,
+		Map:      config.Settings.Map,
 		Snakes: &[]SnakeProp{ // TODO: load from config
 			{"rng0", "http://127.0.0.1:8000"},
 			{"rng1", "http://127.0.0.1:8001"},
@@ -53,23 +64,24 @@ func runBenchmarks() {
 	}
 
 	// resolve BATTLESNAKE_BIN
-	path, err := exec.LookPath(config.BATTLESNAKE_BIN)
+	path, err := exec.LookPath(config.Settings.BATTLESNAKE_BIN)
 	if errors.Is(err, exec.ErrDot) {
 		err = nil
 	} else if err != nil {
 		log.Fatal(err)
 	} else {
-		config.BATTLESNAKE_BIN = path
+		config.Settings.BATTLESNAKE_BIN = path
 		// log.Printf("found BATTLESNAKE_BIN at %s", path)
 	}
 
-	results := make([]BenchmarkResult, len(bg.Sizes)*bg.Rounds)
+	// results := make([]BenchmarkResult, len(bg.Sizes)*bg.Rounds)
+	var results []BenchmarkResult
 	bg.Benchmarks = &results
 
 	draws := 0
 	wins := make(map[string]int)
 
-	for i, size := range bg.Sizes {
+	for _, size := range bg.Sizes {
 		width := size
 		height := size
 
@@ -79,7 +91,8 @@ func runBenchmarks() {
 
 			// run benchmark
 			res := bench.Run()
-			results[i*len(bg.Sizes)+round] = res
+			// results[i*len(bg.Sizes)+round] = res
+			results = append(results, res)
 
 			data := res.Bench.ParseLog()
 			if data != nil {
@@ -95,16 +108,12 @@ func runBenchmarks() {
 		}
 	}
 
-	// fmt.Println("draws:", draws)
-	// for winner, wins := range wins {
-	// 	fmt.Printf("%s: %d\n", winner, wins)
-	// }
 	summary := BenchmarkSummary{
 		Draws: draws,
 		Wins:  wins,
 	}
 	bg.Summary = &summary
 
-	// fmt.Println(bg.EncodeJSON())
-	bg.PrintJSON()
+	// write JSON to file to ./results
+	err = bg.WriteJSON()
 }

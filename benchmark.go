@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/Nathan13888/bs-benchmark/v2/config"
 )
@@ -29,7 +30,7 @@ type BenchmarkGroup struct {
 	Rounds     int                `json:"rounds"`
 	Sizes      []int              `json:"sizes"`
 	Seed       string             `json:"seed"`
-	Timeout    string             `json:"timeout"`
+	Timeout    int                `json:"timeout"`
 	Gametype   string             `json:"gametype"`
 	Map        string             `json:"map"`
 	Snakes     *[]SnakeProp       `json:"snakes"`
@@ -61,22 +62,22 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 	)
 
 	size := fmt.Sprintf("%dx%d", width, height)
-	currentTime := time.Now().Format("20060102150405")
+	currentTime := GetShortTime()
 	logFile := fmt.Sprintf("benchmark-%s-%s-r%d-%s-%s-%s.json",
 		currentTime, size, round, gametype, mapp, seed)
 
 	frmt := []string{
 		"play",
 		"--width", fmt.Sprintf("%d", width), "--height", fmt.Sprintf("%d", height),
-		"--timeout", timeout,
+		"--timeout", fmt.Sprintf("%d", timeout),
 		"--gametype", gametype,
 		"--map", mapp,
 		"--seed", seed,
-		"--output", filepath.Join(config.OUTPUTS_DIR, logFile),
-		"--board-url", config.BOARD_URL,
+		"--output", filepath.Join(config.Settings.OutputsDir, logFile),
+		"--board-url", config.Settings.BoardURL,
 	}
 
-	if config.USE_BROWSER {
+	if config.Settings.UseBrowser {
 		frmt = append(frmt, "--browser")
 	}
 
@@ -86,7 +87,7 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 
 	res := Benchmark{
 		Args:    frmt,
-		Command: fmt.Sprintf("%s %s", config.BATTLESNAKE_BIN, strings.Join(frmt, " ")),
+		Command: fmt.Sprintf("%s %s", config.Settings.BATTLESNAKE_BIN, strings.Join(frmt, " ")),
 		LogFile: logFile,
 		Width:   width,
 		Height:  height,
@@ -98,9 +99,7 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 func (benchmark *Benchmark) Run() BenchmarkResult {
 	args := benchmark.Args
 
-	// log.Println("Running BATTLESNAKE_BIN with args:", args)
-
-	cmd := exec.Command(config.BATTLESNAKE_BIN, args...)
+	cmd := exec.Command(config.Settings.BATTLESNAKE_BIN, args...)
 
 	// stdout, err := cmd.StdoutPipe()
 	// if err != nil {
@@ -128,7 +127,7 @@ type LogData struct {
 
 func (b *Benchmark) ParseLog() *LogData {
 	logFile := b.LogFile
-	path := filepath.Join(config.OUTPUTS_DIR, logFile)
+	path := filepath.Join(config.Settings.OutputsDir, logFile)
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
@@ -178,6 +177,28 @@ func (bg *BenchmarkGroup) EncodeJSON() []byte {
 		log.Fatal(err)
 	}
 	return encoded
+}
+
+// write JSON to file in ./results/
+func (bg *BenchmarkGroup) WriteJSON() error {
+	resultName := fmt.Sprintf("results-%s-%s-%s-%s.json", GetShortTime(), bg.Name, bg.Gametype, bg.Map)
+	file := filepath.Join(config.Settings.ResultsDir, resultName)
+	resultFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	formattedOutput := string(bg.EncodeJSON())
+
+	for _, line := range formattedOutput {
+		_, err := io.WriteString(resultFile, fmt.Sprintf("%s\n", line))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Print all contents of BenchmarkGroup by encoding JSON

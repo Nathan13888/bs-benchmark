@@ -1,0 +1,18 @@
+{
+  "BATTLESNAKE_BIN": "battlesnake",
+  "outputs_dir": "./outputs",
+  "results_dir": "./results",
+  "use_browser": false,
+  "board_url": "https://board.battlesnake.com",
+  "rounds": 10,
+  "sizes": [
+    5,
+    7,
+    9,
+    11
+  ],
+  "seed": "1656460409268690000",
+  "timeout": 500,
+  "gametype": "standard",
+  "map": "standard"
+}
