@@ -1,3 +1,6 @@
 [submodule "starter-snake-go"]
 	path = starter-snake-go
 	url = https://github.com/BattlesnakeOfficial/starter-snake-go
+[submodule "board"]
+	path = board
+	url = https://github.com/BattlesnakeOfficial/board
