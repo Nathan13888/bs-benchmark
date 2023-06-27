@@ -73,6 +73,7 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 		"--map", mapp,
 		"--seed", seed,
 		"--output", filepath.Join(config.OUTPUTS_DIR, logFile),
+		"--board-url", config.BOARD_URL,
 	}
 
 	if config.USE_BROWSER {
@@ -113,8 +114,6 @@ func (benchmark *Benchmark) Run() BenchmarkResult {
 		log.Fatal(err)
 	}
 	// fmt.Println(stdout)
-
-	// TODO: process output results
 
 	return BenchmarkResult{
 		Bench: benchmark,

@@ -4,7 +4,8 @@ package config
 var (
 	BATTLESNAKE_BIN = "battlesnake"
 	OUTPUTS_DIR     = "./outputs"
-	USE_BROWSER     = false
+	USE_BROWSER     = true
+	BOARD_URL       = "http://localhost:3000" // https://board.battlesnake.com
 
 	ROUNDS int = 10
 	SIZES      = []int{5, 7, 9, 11}
