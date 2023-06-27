@@ -1,5 +1,6 @@
 bin/
 outputs/
+results/
 *.md
 .git
 starter-snake-go/
