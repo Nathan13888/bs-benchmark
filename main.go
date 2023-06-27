@@ -28,6 +28,7 @@ func startCLI() {
 			// TODO: verbose/debug flag
 		},
 		UsageText: "bs-benchmark [global options] command [command options] [arguments...]",
+		ArgsUsage: "[snake1_name snake1_url]...[snakeN_name snakeN_url]",
 		Action: func(ctx *cli.Context) error {
 			// startup checks
 			startupChecks()
