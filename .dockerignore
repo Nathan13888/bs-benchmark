@@ -1,0 +1,6 @@
+bin/
+outputs/
+*.md
+.git
+starter-snake-go/
+board/
