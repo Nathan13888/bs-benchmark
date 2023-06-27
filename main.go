@@ -15,8 +15,9 @@ import (
 
 func startCLI() {
 	app := &cli.App{
-		Name:  "bs-benchmark",
-		Usage: "do you lift bro? bench yo snakes",
+		Name:    "bs-benchmark",
+		Version: config.BuildVersion,
+		Usage:   "do you lift bro? bench yo snakes",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "config",
