@@ -1,0 +1,67 @@
+version: '3.7'
+
+networks:
+  bsbenchmark:
+
+
+x-rng-snake-common:
+  &rng
+  build: ./starter-snake-go
+  #depends:
+  #  - 
+  # TODO: healthcheck:
+  # test: ["CMD", "curl", "-f", "http://localhost:8000/<some endpoint>"]
+  # interval: 30s
+  # timeout: 20s
+  # retries: 3
+
+services:
+  rng0:
+    <<: *rng
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - "PORT=8000"
+
+  rng1:
+    <<: *rng
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - "PORT=8001"
+
+  rng2:
+    <<: *rng
+    ports:
+      - "127.0.0.1:8002:8002"
+    environment:
+      - "PORT=8002"
+
+  rng3:
+    <<: *rng
+    ports:
+      - "127.0.0.1:8003:8003"
+    environment:
+      - "PORT=8003"
+
+  board:
+    build: ./board
+    container_name: bs-board
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - bsbenchmark
+
+  benchmark:
+    build: .
+    container_name: benchmark
+    network_mode: "host"
+    command: bs-benchmark
+    depends_on:
+      - rng0
+      - rng1
+      - rng2
+      - rng3
+      - board
+
+
