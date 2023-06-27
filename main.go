@@ -2,32 +2,94 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Nathan13888/bs-benchmark/v2/config"
+	"github.com/urfave/cli/v2"
 )
 
-// TODO: implement CLI
-func main() {
-	// TODO: ping snakes
+func startCLI() {
+	app := &cli.App{
+		Name:  "bs-benchmark",
+		Usage: "do you lift bro? bench yo snakes",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "config",
+				Aliases:     []string{"c"},
+				Value:       "./config.json",
+				Usage:       "Load configuration from `FILE`",
+				Destination: &config.ConfigFile,
+			},
+			// TODO: verbose/debug flag
+		},
+		UsageText: "bs-benchmark [global options] command [command options] [arguments...]",
+		Action: func(ctx *cli.Context) error {
+			// startup checks
+			startupChecks()
 
+			// read flags for snakes
+			var snakes []SnakeProp
+
+			// read arguments for snake names and addresses
+			for i := 0; i < ctx.Args().Len(); i += 2 {
+				name := ctx.Args().Get(i)
+				addr := ctx.Args().Get(i + 1)
+
+				if strings.HasPrefix(name, "http") {
+					return errors.New("snake name shouldn't start with http (check --help)")
+				}
+				if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
+					return errors.New("snake address should start with http:// or https:// (check --help)")
+				}
+
+				snakes = append(snakes, SnakeProp{
+					Name: name,
+					Addr: addr,
+				})
+			}
+
+			if len(snakes) == 0 {
+				return errors.New("no snakes provided (check --help)")
+			}
+
+			// TODO: ping snakes
+
+			// TODO: auto detect snakes?, --local-detect
+
+			fmt.Println("Running benchmarks...", config.Settings.Rounds, "rounds",
+				"and", len(config.Settings.Sizes), "board sizes",
+				"with", len(snakes), "snakes.")
+			runBenchmarks(&snakes)
+
+			return nil
+		},
+	}
+
+	app.Suggest = true
+
+	cli.VersionPrinter = func(cCtx *cli.Context) { config.PrintVersion(cCtx) }
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func main() {
+	startCLI()
+}
+
+func startupChecks() {
 	// load configs
 	err := config.LoadSettings()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// prepare ./outputs directory
-	if _, err := os.Stat("./outputs"); os.IsNotExist(err) {
-		// create directory
-		err := os.Mkdir("./outputs", 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
 	// get absolute path of ./outputs directory
 	path, err := filepath.Abs("./outputs")
 	if err != nil {
@@ -43,10 +105,17 @@ func main() {
 	}
 	config.Settings.ResultsDir = res_path
 
-	runBenchmarks()
+	err = Mkdir(config.Settings.OutputsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = Mkdir(config.Settings.ResultsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func runBenchmarks() {
+func runBenchmarks(snakes *[]SnakeProp) {
 	bg := BenchmarkGroup{
 		Name:     "default_group_name",
 		Rounds:   config.Settings.Rounds,
@@ -55,12 +124,7 @@ func runBenchmarks() {
 		Timeout:  config.Settings.Timeout,
 		Gametype: config.Settings.Gametype,
 		Map:      config.Settings.Map,
-		Snakes: &[]SnakeProp{ // TODO: load from config
-			{"rng0", "http://127.0.0.1:8000"},
-			{"rng1", "http://127.0.0.1:8001"},
-			{"rng2", "http://127.0.0.1:8002"},
-			{"rng3", "http://127.0.0.1:8003"},
-		},
+		Snakes:   snakes,
 	}
 
 	// resolve BATTLESNAKE_BIN

@@ -12,7 +12,7 @@ func GetShortTime() string {
 func Mkdir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		// create directory
-		err := os.Mkdir("./outputs", 0755)
+		err := os.Mkdir(path, 0755)
 
 		// TODO: check if error is "file exists"
 		return err

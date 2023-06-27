@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+var ConfigFile = "./config.json"
+
 // settings
 type SettingsProperties struct {
 	BATTLESNAKE_BIN string
@@ -43,13 +45,13 @@ var Settings = SettingsProperties{
 func LoadSettings() error {
 	// read config file if it exists
 	// open config JSON and marshal into Settings struct
-	path, err := os.OpenFile("./config.json", os.O_RDONLY, 0644)
+	path, err := os.OpenFile(ConfigFile, os.O_RDONLY, 0644)
 	defer path.Close()
 	if os.IsNotExist(err) {
 		// if no config file, write default settings to config file
-		fmt.Println("Writing default settings to config.json")
+		fmt.Println("Writing default settings to", ConfigFile)
 
-		path, err := os.OpenFile("./config.json", os.O_CREATE|os.O_WRONLY, 0644)
+		path, err := os.OpenFile(ConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
 		defer path.Close()
 		if err != nil {
 			return err
@@ -71,7 +73,7 @@ func LoadSettings() error {
 	}
 
 	// read config file
-	fmt.Println("Reading config from file" + path.Name())
+	fmt.Println("Reading config from file " + ConfigFile)
 	decoder := json.NewDecoder(path)
 	err = decoder.Decode(&Settings)
 	if err != nil {
