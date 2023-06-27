@@ -145,7 +145,7 @@ func (b *Benchmark) ParseLog() *LogData {
 
 	n := len(lines)
 	if n <= 3 {
-		log.Fatal("Log file is too short.")
+		log.Fatal("Log file is too short. ", n, " lines found. File path: ", path)
 	}
 
 	err = json.Unmarshal([]byte(lines[0]), &data.Game)
@@ -180,13 +180,13 @@ func (bg *BenchmarkGroup) EncodeJSON() []byte {
 }
 
 // write JSON to file in ./results/
-func (bg *BenchmarkGroup) WriteJSON() error {
+func (bg *BenchmarkGroup) WriteJSON() (string, error) {
 	resultName := fmt.Sprintf("results-%s-%s-%s-%s.json", GetShortTime(), bg.Name, bg.Gametype, bg.Map)
 	file := filepath.Join(config.Settings.ResultsDir, resultName)
 	resultFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return file, err
 	}
 
 	formattedOutput := string(bg.EncodeJSON())
@@ -194,11 +194,11 @@ func (bg *BenchmarkGroup) WriteJSON() error {
 	for _, line := range formattedOutput {
 		_, err := io.WriteString(resultFile, fmt.Sprintf("%s\n", line))
 		if err != nil {
-			return err
+			return file, err
 		}
 	}
 
-	return nil
+	return file, nil
 }
 
 // Print all contents of BenchmarkGroup by encoding JSON
