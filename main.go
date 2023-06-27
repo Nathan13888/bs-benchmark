@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/Nathan13888/bs-benchmark/v2/config"
 )
@@ -13,6 +15,22 @@ func main() {
 	// TODO: ping snakes
 
 	// TODO: load snakes from config/flags
+
+	// prepare ./outputs directory
+	if _, err := os.Stat("./outputs"); os.IsNotExist(err) {
+		// create directory
+		err := os.Mkdir("./outputs", 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	// get absolute path of ./outputs directory
+	path, err := filepath.Abs("./outputs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.OUTPUTS_DIR = path
+	// fmt.Println("OUTPUTS_DIR:", config.OUTPUTS_DIR)
 
 	runBenchmarks()
 }

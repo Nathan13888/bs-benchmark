@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Nathan13888/bs-benchmark/v2/config"
 )
@@ -52,8 +54,9 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 	)
 
 	size := fmt.Sprintf("%dx%d", width, height)
-	logFile := fmt.Sprintf("benchmark-%s-r%d-%s-%s-%s.json",
-		size, round, gametype, mapp, seed)
+	currentTime := time.Now().Format("20060102150405")
+	logFile := fmt.Sprintf("benchmark-%s-%s-r%d-%s-%s-%s.json",
+		currentTime, size, round, gametype, mapp, seed)
 
 	frmt := []string{
 		"play",
@@ -62,7 +65,7 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 		"--gametype", gametype,
 		"--map", mapp,
 		"--seed", seed,
-		"--output", logFile,
+		"--output", filepath.Join(config.OUTPUTS_DIR, logFile),
 	}
 
 	if config.USE_BROWSER {
@@ -87,7 +90,7 @@ func (bg *BenchmarkGroup) CreateBenchmark(round int, width int, height int) Benc
 func (benchmark *Benchmark) Run() BenchmarkResult {
 	args := benchmark.Args
 
-	log.Println("Running BATTLESNAKE_BIN with args:", args)
+	// log.Println("Running BATTLESNAKE_BIN with args:", args)
 
 	cmd := exec.Command(config.BATTLESNAKE_BIN, args...)
 

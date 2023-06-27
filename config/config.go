@@ -3,6 +3,7 @@ package config
 // settings
 var (
 	BATTLESNAKE_BIN = "battlesnake"
+	OUTPUTS_DIR     = "./outputs"
 	USE_BROWSER     = false
 
 	ROUNDS int = 10
