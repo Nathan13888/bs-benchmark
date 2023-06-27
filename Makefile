@@ -16,7 +16,12 @@ dcu:
 dc-snakes:
 	docker compose up rng0 rng1 rng2 rng3
 
+dc-board:
+	docker compose up board
+
 demo:
+	docker compose up -d rng0 rng1 rng2 rng3
+	cat config.json
 	go run . "rng0" "http://127.0.0.1:8000" "rng1" "http://127.0.0.1:8001" "rng2", "http://127.0.0.1:8002" "rng3" "http://127.0.0.1:8003"
 
 test:
