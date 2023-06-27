@@ -47,6 +47,9 @@ services:
   board:
     build: ./board
     container_name: bs-board
+    command: /bin/new-entrypoint.sh
+    volumes:
+      - "./docker/board-entrypoint.sh:/bin/new-entrypoint.sh:ro"
     ports:
       - "127.0.0.1:3000:80"
     networks:

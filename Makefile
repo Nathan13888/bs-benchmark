@@ -9,5 +9,15 @@ build:
 		-X 'github.com/Nathan13888/bs-benchmark/v2/config.BuildARCH=$$(go env GOARCH)' \
 		-s -w"
 
+dcu:
+	docker compose up -d
+	docker compose logs -f
+
+dc-snakes:
+	docker compose up rng0 rng1 rng2 rng3
+
+demo:
+	go run . "rng0" "http://127.0.0.1:8000" "rng1" "http://127.0.0.1:8001" "rng2", "http://127.0.0.1:8002" "rng3" "http://127.0.0.1:8003"
+
 test:
 	go test -v ./...
