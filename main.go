@@ -179,5 +179,11 @@ func runBenchmarks(snakes *[]SnakeProp) {
 	bg.Summary = &summary
 
 	// write JSON to file to ./results
-	err = bg.WriteJSON()
+	resLog, err := bg.WriteJSON()
+	if err != nil {
+		// log.Fatal(err)
+		fmt.Println(err)
+	}
+
+	fmt.Println("Written results to ", resLog)
 }
