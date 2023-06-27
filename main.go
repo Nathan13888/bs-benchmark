@@ -44,7 +44,7 @@ func runBenchmarks() {
 		Timeout:  config.TIMEOUT,
 		Gametype: config.GAMETYPE,
 		Map:      config.MAP,
-		Snakes: &[]Snake{ // TODO: load from config
+		Snakes: &[]SnakeProp{ // TODO: load from config
 			{"rng0", "http://127.0.0.1:8000"},
 			{"rng1", "http://127.0.0.1:8001"},
 			{"rng2", "http://127.0.0.1:8002"},
@@ -66,6 +66,9 @@ func runBenchmarks() {
 	results := make([]BenchmarkResult, len(bg.Sizes)*bg.Rounds)
 	bg.Benchmarks = &results
 
+	draws := 0
+	wins := make(map[string]int)
+
 	for i, size := range bg.Sizes {
 		width := size
 		height := size
@@ -77,8 +80,31 @@ func runBenchmarks() {
 			// run benchmark
 			res := bench.Run()
 			results[i*len(bg.Sizes)+round] = res
+
+			data := res.Bench.ParseLog()
+			if data != nil {
+				draw := data.Result.IsDraw
+				winner := data.Result.WinnerName
+
+				if draw {
+					draws++
+				} else {
+					wins[winner]++
+				}
+			}
 		}
 	}
 
-	// bg.PrintJSON()
+	// fmt.Println("draws:", draws)
+	// for winner, wins := range wins {
+	// 	fmt.Printf("%s: %d\n", winner, wins)
+	// }
+	summary := BenchmarkSummary{
+		Draws: draws,
+		Wins:  wins,
+	}
+	bg.Summary = &summary
+
+	// fmt.Println(bg.EncodeJSON())
+	bg.PrintJSON()
 }

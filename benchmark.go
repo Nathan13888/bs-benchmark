@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -19,7 +20,7 @@ type Benchmark struct {
 	LogFile string          `json:"log_file"`
 	Width   int             `json:"width"`
 	Height  int             `json:"height"`
-	Snakes  *[]Snake        `json:"-"`
+	Snakes  *[]SnakeProp    `json:"-"`
 	Group   *BenchmarkGroup `json:"-"`
 }
 
@@ -31,8 +32,14 @@ type BenchmarkGroup struct {
 	Timeout    string             `json:"timeout"`
 	Gametype   string             `json:"gametype"`
 	Map        string             `json:"map"`
-	Snakes     *[]Snake           `json:"snakes"`
+	Snakes     *[]SnakeProp       `json:"snakes"`
 	Benchmarks *[]BenchmarkResult `json:"benchmarks"`
+	Summary    *BenchmarkSummary  `json:"summary"`
+}
+
+type BenchmarkSummary struct {
+	Draws int            `json:"draws"`
+	Wins  map[string]int `json:"wins"`
 }
 
 type BenchmarkResult struct {
@@ -40,7 +47,7 @@ type BenchmarkResult struct {
 	// TODO: who wins? parse log file
 }
 
-type Snake struct {
+type SnakeProp struct {
 	Name string `json:"name"`
 	Addr string `json:"addr"`
 }
@@ -94,10 +101,10 @@ func (benchmark *Benchmark) Run() BenchmarkResult {
 
 	cmd := exec.Command(config.BATTLESNAKE_BIN, args...)
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// stdout, err := cmd.StdoutPipe()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
@@ -105,7 +112,7 @@ func (benchmark *Benchmark) Run() BenchmarkResult {
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(stdout)
+	// fmt.Println(stdout)
 
 	// TODO: process output results
 
@@ -114,11 +121,67 @@ func (benchmark *Benchmark) Run() BenchmarkResult {
 	}
 }
 
-// Print all contents of BenchmarkGroup by encoding JSON
-func (bg *BenchmarkGroup) PrintJSON() {
+type LogData struct {
+	Game     Game
+	Requests []SnakeRequest
+	Result   Result
+}
+
+func (b *Benchmark) ParseLog() *LogData {
+	logFile := b.LogFile
+	path := filepath.Join(config.OUTPUTS_DIR, logFile)
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data LogData
+	raw := strings.Split(string(content), "\n")
+
+	var lines []string
+	for _, line := range raw {
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+
+	n := len(lines)
+	if n <= 3 {
+		log.Fatal("Log file is too short.")
+	}
+
+	err = json.Unmarshal([]byte(lines[0]), &data.Game)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for i := 1; i < n-1; i++ {
+		var req SnakeRequest
+		err = json.Unmarshal([]byte(lines[i]), &req)
+		if err != nil {
+			fmt.Println(err)
+		}
+		data.Requests = append(data.Requests, req)
+	}
+
+	err = json.Unmarshal([]byte(lines[n-1]), &data.Result)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return &data
+}
+
+func (bg *BenchmarkGroup) EncodeJSON() []byte {
+	// encoded, err := json.MarshalIndent(bg, "", "  ")
 	encoded, err := json.MarshalIndent(bg, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(encoded))
+	return encoded
+}
+
+// Print all contents of BenchmarkGroup by encoding JSON
+func (bg *BenchmarkGroup) PrintJSON() {
+	fmt.Println(string(bg.EncodeJSON()))
 }
