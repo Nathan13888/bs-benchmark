@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -189,16 +188,16 @@ func (bg *BenchmarkGroup) WriteJSON() (string, error) {
 		return file, err
 	}
 
-	formattedOutput := string(bg.EncodeJSON())
-
-	for _, line := range formattedOutput {
-		_, err := io.WriteString(resultFile, fmt.Sprintf("%s\n", line))
-		if err != nil {
-			return file, err
-		}
+	// marshal BenchmarkGroup to JSON
+	encoded, err := json.Marshal(bg)
+	if err != nil {
+		return file, err
 	}
 
-	return file, nil
+	// write JSON to file
+	_, err = resultFile.Write(encoded)
+
+	return file, err
 }
 
 // Print all contents of BenchmarkGroup by encoding JSON
