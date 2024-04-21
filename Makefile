@@ -9,20 +9,30 @@ build:
 		-X 'github.com/Nathan13888/bs-benchmark/v2/config.BuildARCH=$$(go env GOARCH)' \
 		-s -w"
 
+install:
+	# go install github.com/BattlesnakeOfficial/rules/cli/battlesnake@latest
+
 dcu:
+	docker compose down
 	docker compose up -d
 	docker compose logs -f
 
 dc-snakes:
+	docker compose down rng0 rng1 rng2 rng3
 	docker compose up rng0 rng1 rng2 rng3
 
 dc-board:
+	docker compose down board
 	docker compose up board
 
 demo:
+	docker compose down
 	docker compose up -d rng0 rng1 rng2 rng3
 	cat config.json
 	go run . "rng0" "http://127.0.0.1:8000" "rng1" "http://127.0.0.1:8001" "rng2", "http://127.0.0.1:8002" "rng3" "http://127.0.0.1:8003"
+
+clean:
+	docker compose down
 
 test:
 	go test -v ./...

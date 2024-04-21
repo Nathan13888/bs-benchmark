@@ -151,6 +151,8 @@ func runBenchmarks(snakes *[]SnakeProp) {
 		width := size
 		height := size
 
+		// TODO: make progress bar
+
 		for round := 0; round < bg.Rounds; round++ {
 			// create benchmark
 			bench := bg.CreateBenchmark(round, width, height)
@@ -170,6 +172,14 @@ func runBenchmarks(snakes *[]SnakeProp) {
 				} else {
 					wins[winner]++
 				}
+				// fmt.Printf("Wins: %v, Draws: %i\n", wins, draws)
+				// display results
+				score_str := ""
+				for k, v := range wins {
+					score_str += fmt.Sprintf("%s (%d). ", k, v)
+				}
+				fmt.Printf("Round %d/%d: Size %dx%d, Winner: %s - Scores: %s\n", round+1, bg.Rounds, size, size, winner, score_str)
+
 			}
 		}
 	}
@@ -179,6 +189,8 @@ func runBenchmarks(snakes *[]SnakeProp) {
 		Wins:  wins,
 	}
 	bg.Summary = &summary
+
+	fmt.Println("Summary: %v", summary)
 
 	// write JSON to file to ./results
 	resLog, err := bg.WriteJSON()
