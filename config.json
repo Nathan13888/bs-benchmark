@@ -4,11 +4,8 @@
   "results_dir": "./results",
   "use_browser": false,
   "board_url": "https://board.battlesnake.com",
-  "rounds": 10,
+  "rounds": 100,
   "sizes": [
-    5,
-    7,
-    9,
     11
   ],
   "seed": "1656460409268690000",
